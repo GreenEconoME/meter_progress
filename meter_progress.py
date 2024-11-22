@@ -64,6 +64,15 @@ if portfolio_export is not None:
         complete_through_col = f'{col} Complete through {comparison_date.date()}'
         complete_df[complete_through_col] = complete_df[latest_col] >= comparison_date
 
+    # Ensure the properties that do not have any gas meters are marked as complete
+    complete_df.loc[complete_df['ESPM ID'].isin([x for x in about_df['ESPM ID'] if x not in list(meter_df.loc[meter_df['Utility Type'] == 'NaturalGas', 'ESPM ID'])]), f'NaturalGas Complete through {comparison_date.date()}'] = True
+
+    # Mark all the builidings as completed if the acquisition date is after the comparison date
+    complete_df['Acquisition Date'] = pd.to_datetime(complete_df['Acquisition Date'], errors='coerce') # Clean up Acquisition Date for date comparison with comparison_date
+    for util in util_types:
+        complete_df.loc[complete_df['Acquisition Date'] >= comparison_date, f'{util} Complete through {comparison_date.date()}'] = True
+
+
     # Gather metrics
     total_gfa = complete_df['Gross Floor Area'].sum()
     num_of_builds = about_df.shape[0]
