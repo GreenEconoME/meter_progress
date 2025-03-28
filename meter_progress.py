@@ -61,16 +61,18 @@ if portfolio_export is not None:
     # Create Complete Through columns
     for col in util_types:
         latest_col = f'{col} Latest'
-        complete_through_col = f'{col} Complete through {comparison_date.date()}'
-        complete_df[complete_through_col] = complete_df[latest_col] >= comparison_date
+        complete_through_col = f'{col} Complete through {pd.Timestamp(comparison_date).date()}'
+        complete_df[complete_through_col] = pd.to_datetime(complete_df[latest_col]) >= comparison_date
 
     # Ensure the properties that do not have any gas meters are marked as complete
     complete_df.loc[complete_df['ESPM ID'].isin([x for x in about_df['ESPM ID'] if x not in list(meter_df.loc[meter_df['Utility Type'] == 'NaturalGas', 'ESPM ID'])]), f'NaturalGas Complete through {comparison_date.date()}'] = True
 
     # Mark all the builidings as completed if the acquisition date is after the comparison date
-    complete_df['Acquisition Date'] = pd.to_datetime(complete_df['Acquisition Date'], errors='coerce') # Clean up Acquisition Date for date comparison with comparison_date
+    complete_df['Acquisition Date'] = pd.to_datetime(complete_df['Acquisition Date'], errors='coerce') # Clean up Acquisition/disposition Date for date comparison with comparison_date
+    complete_df['Disposition Date'] = pd.to_datetime(complete_df['Disposition Date'], errors = 'coerce')
     for util in util_types:
         complete_df.loc[complete_df['Acquisition Date'] >= comparison_date, f'{util} Complete through {comparison_date.date()}'] = True
+        complete_df.loc[complete_df['Disposition Date'] <= comparison_date, f'{util} Complete through {comparison_date.date()}'] = True
 
 
     # Gather metrics
